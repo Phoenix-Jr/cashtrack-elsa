@@ -1,0 +1,357 @@
+/* CashTrack Admin Custom Styles */
+/* Primary Color: #0B177C */
+/* Secondary Color: #B8B8B8 */
+
+/* Header */
+#header {
+    background: linear-gradient(135deg, #0B177C 0%, #0A1259 100%);
+    color: #fff;
+    border-bottom: 3px solid #B8B8B8;
+}
+
+#header a:link, #header a:visited {
+    color: #fff;
+}
+
+#header a:hover {
+    color: #B8B8B8;
+}
+
+/* Branding */
+#branding h1, #branding h1 a:link, #branding h1 a:visited {
+    color: #fff;
+    font-weight: 600;
+}
+
+#branding h1 a:hover {
+    color: #B8B8B8;
+}
+
+/* User tools */
+#user-tools {
+    color: #fff;
+}
+
+#user-tools a {
+    color: #fff;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+#user-tools a:hover {
+    color: #B8B8B8;
+    border-bottom-color: #B8B8B8;
+}
+
+/* Module links */
+.module h2, .module caption, .inline-group h2 {
+    background: linear-gradient(135deg, #0B177C 0%, #0A1259 100%);
+    color: #fff;
+    border-bottom: 2px solid #B8B8B8;
+}
+
+.module h2 a, .module caption a {
+    color: #fff;
+}
+
+.module h2 a:hover, .module caption a:hover {
+    color: #B8B8B8;
+}
+
+/* Buttons */
+.button, input[type=submit], input[type=button], .submit-row input, a.button {
+    background: linear-gradient(135deg, #0B177C 0%, #0A1259 100%);
+    color: #fff;
+    border: 1px solid #0B177C;
+    padding: 10px 15px;
+    border-radius: 4px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.button:hover, input[type=submit]:hover, input[type=button]:hover, .submit-row input:hover, a.button:hover {
+    background: linear-gradient(135deg, #0A1259 0%, #0B177C 100%);
+    border-color: #B8B8B8;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(11, 23, 124, 0.3);
+}
+
+.button.default, input[type=submit].default, .submit-row input.default {
+    background: linear-gradient(135deg, #0B177C 0%, #0A1259 100%);
+    border-color: #0B177C;
+}
+
+.button.default:hover, input[type=submit].default:hover {
+    background: linear-gradient(135deg, #0A1259 0%, #0B177C 100%);
+    border-color: #B8B8B8;
+}
+
+/* Links */
+a:link, a:visited {
+    color: #0B177C;
+}
+
+a:hover {
+    color: #0A1259;
+}
+
+/* Selected items */
+.selected {
+    background-color: #0B177C !important;
+    color: #fff !important;
+}
+
+.selected a {
+    color: #fff !important;
+}
+
+/* Action checkboxes */
+.action-checkbox {
+    border-color: #B8B8B8;
+}
+
+/* Form fields */
+input[type=text], input[type=password], input[type=email], input[type=url], 
+input[type=number], textarea, select {
+    border: 1px solid #B8B8B8;
+    border-radius: 4px;
+    padding: 8px 12px;
+    transition: border-color 0.3s ease;
+}
+
+input[type=text]:focus, input[type=password]:focus, input[type=email]:focus, 
+input[type=url]:focus, input[type=number]:focus, textarea:focus, select:focus {
+    border-color: #0B177C;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(11, 23, 124, 0.1);
+}
+
+/* Breadcrumbs */
+.breadcrumbs {
+    background: #f8f9fa;
+    border-bottom: 1px solid #B8B8B8;
+    padding: 10px 15px;
+}
+
+.breadcrumbs a {
+    color: #0B177C;
+}
+
+.breadcrumbs a:hover {
+    color: #0A1259;
+}
+
+/* Messages */
+.success {
+    background-color: #d4edda;
+    border-left: 4px solid #10B981;
+    color: #155724;
+}
+
+.error {
+    background-color: #f8d7da;
+    border-left: 4px solid #EF4444;
+    color: #721c24;
+}
+
+.warning {
+    background-color: #fff3cd;
+    border-left: 4px solid #F59E0B;
+    color: #856404;
+}
+
+.info {
+    background-color: #d1ecf1;
+    border-left: 4px solid #0B177C;
+    color: #0c5460;
+}
+
+/* Tables */
+#result_list thead th {
+    background: linear-gradient(135deg, #0B177C 0%, #0A1259 100%);
+    color: #fff;
+    border-bottom: 2px solid #B8B8B8;
+}
+
+#result_list tbody tr:hover {
+    background-color: rgba(11, 23, 124, 0.05);
+}
+
+#result_list tbody tr.selected {
+    background-color: rgba(11, 23, 124, 0.1);
+}
+
+/* Pagination */
+.paginator a {
+    color: #0B177C;
+    border: 1px solid #B8B8B8;
+    padding: 5px 10px;
+    margin: 0 2px;
+    border-radius: 4px;
+}
+
+.paginator a:hover {
+    background: #0B177C;
+    color: #fff;
+    border-color: #0B177C;
+}
+
+.paginator .this-page {
+    background: #0B177C;
+    color: #fff;
+    border-color: #0B177C;
+}
+
+/* Filters */
+#changelist-filter {
+    border-left: 1px solid #B8B8B8;
+}
+
+#changelist-filter h2 {
+    background: linear-gradient(135deg, #0B177C 0%, #0A1259 100%);
+    color: #fff;
+    border-bottom: 2px solid #B8B8B8;
+}
+
+#changelist-filter h3 {
+    color: #0B177C;
+    border-bottom: 1px solid #B8B8B8;
+}
+
+#changelist-filter li.selected a {
+    color: #0B177C;
+    font-weight: 600;
+}
+
+#changelist-filter a {
+    color: #666;
+}
+
+#changelist-filter a:hover {
+    color: #0B177C;
+}
+
+/* Object tools */
+.object-tools {
+    margin-bottom: 15px;
+}
+
+.object-tools a {
+    background: linear-gradient(135deg, #0B177C 0%, #0A1259 100%);
+    color: #fff;
+    padding: 10px 15px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.object-tools a:hover {
+    background: linear-gradient(135deg, #0A1259 0%, #0B177C 100%);
+    box-shadow: 0 2px 8px rgba(11, 23, 124, 0.3);
+}
+
+.object-tools a.addlink {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+}
+
+.object-tools a.addlink:hover {
+    background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+}
+
+/* Inline forms */
+.inline-group {
+    border: 1px solid #B8B8B8;
+    border-radius: 4px;
+}
+
+.inline-group h2 {
+    background: linear-gradient(135deg, #0B177C 0%, #0A1259 100%);
+    color: #fff;
+    border-bottom: 2px solid #B8B8B8;
+}
+
+/* Related widget wrapper */
+.related-widget-wrapper {
+    border: 1px solid #B8B8B8;
+    border-radius: 4px;
+}
+
+.related-widget-wrapper-link {
+    background: #0B177C;
+    color: #fff;
+    border-radius: 0 4px 4px 0;
+}
+
+.related-widget-wrapper-link:hover {
+    background: #0A1259;
+}
+
+/* Help text */
+.help {
+    color: #B8B8B8;
+    font-size: 12px;
+}
+
+/* Required field indicator */
+.required {
+    color: #0B177C;
+}
+
+/* Delete confirmation */
+.delete-confirmation {
+    border: 2px solid #EF4444;
+    background: #fff5f5;
+}
+
+.delete-confirmation h2 {
+    background: #EF4444;
+    color: #fff;
+}
+
+/* Calendar widget */
+.calendarbox {
+    border: 1px solid #B8B8B8;
+    border-radius: 4px;
+}
+
+.calendarbox .calendarnav-previous, .calendarbox .calendarnav-next {
+    background: #0B177C;
+    color: #fff;
+}
+
+.calendarbox .calendarnav-previous:hover, .calendarbox .calendarnav-next:hover {
+    background: #0A1259;
+}
+
+.calendarbox .calendar td.selected a {
+    background: #0B177C;
+    color: #fff;
+}
+
+.calendarbox .calendar td a:hover {
+    background: rgba(11, 23, 124, 0.1);
+}
+
+/* Time widget */
+.timezonewarning {
+    background: #fff3cd;
+    border-left: 4px solid #F59E0B;
+    color: #856404;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #header {
+        padding: 10px;
+    }
+    
+    #branding h1 {
+        font-size: 18px;
+    }
+    
+    .button, input[type=submit], input[type=button] {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+}
+
