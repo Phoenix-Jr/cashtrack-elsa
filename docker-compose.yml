@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./cash-track-backend
+      dockerfile: Dockerfile
+    container_name: cash-track-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./cash-track-backend:/app
+    environment:
+      - DEBUG=True
+      - DJANGO_SETTINGS_MODULE=cash_track_api.settings
+    networks:
+      - cash-track-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./cash-track-react
+      dockerfile: Dockerfile
+    container_name: cash-track-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./cash-track-react:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:8000/api
+    networks:
+      - cash-track-network
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+networks:
+  cash-track-network:
+    driver: bridge
+
