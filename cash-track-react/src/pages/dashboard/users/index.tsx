@@ -218,18 +218,83 @@ export default function UsersPage() {
       return
     }
 
+    // Clear previous errors
+    setFormErrors({})
+
     if (editingUser) {
       // Remove password from update data (password is changed separately)
       const { password, ...updateData } = formData
-      updateMutation.mutate({
-        userId: editingUser.id,
-        data: updateData,
-      })
+      updateMutation.mutate(
+        {
+          userId: editingUser.id,
+          data: updateData,
+        },
+        {
+          onSuccess: () => {
+            handleCloseModal()
+          },
+          onError: (error: any) => {
+            // Handle validation errors
+            const errorData = error?.response?.data
+            if (errorData) {
+              const errors: Record<string, string> = {}
+              
+              // Handle field-specific errors
+              if (errorData.email) {
+                errors.email = Array.isArray(errorData.email) ? errorData.email[0] : errorData.email
+              }
+              if (errorData.name) {
+                errors.name = Array.isArray(errorData.name) ? errorData.name[0] : errorData.name
+              }
+              if (errorData.role) {
+                errors.role = Array.isArray(errorData.role) ? errorData.role[0] : errorData.role
+              }
+              if (errorData.status) {
+                errors.status = Array.isArray(errorData.status) ? errorData.status[0] : errorData.status
+              }
+              
+              setFormErrors(errors)
+            }
+          },
+        }
+      )
     } else {
-      createMutation.mutate(formData)
+      createMutation.mutate(formData, {
+        onSuccess: () => {
+          handleCloseModal()
+        },
+        onError: (error: any) => {
+          // Handle validation errors
+          const errorData = error?.response?.data
+          if (errorData) {
+            const errors: Record<string, string> = {}
+            
+            // Handle password errors with details
+            if (errorData.error === "Mot de passe invalide" && errorData.details) {
+              errors.password = errorData.details.join(". ")
+            } else if (errorData.password) {
+              errors.password = Array.isArray(errorData.password) ? errorData.password.join(". ") : errorData.password
+            }
+            
+            // Handle other field-specific errors
+            if (errorData.email) {
+              errors.email = Array.isArray(errorData.email) ? errorData.email[0] : errorData.email
+            }
+            if (errorData.name) {
+              errors.name = Array.isArray(errorData.name) ? errorData.name[0] : errorData.name
+            }
+            if (errorData.role) {
+              errors.role = Array.isArray(errorData.role) ? errorData.role[0] : errorData.role
+            }
+            if (errorData.status) {
+              errors.status = Array.isArray(errorData.status) ? errorData.status[0] : errorData.status
+            }
+            
+            setFormErrors(errors)
+          }
+        },
+      })
     }
-
-    handleCloseModal()
   }
 
   const handleFieldChange = (field: string, value: string) => {
@@ -298,14 +363,44 @@ export default function UsersPage() {
     }
 
     setPasswordErrors({})
-    changePasswordMutation.mutate({
-      userId: selectedUserForPassword.id,
-      password: newPassword,
-    })
-    setIsPasswordModalOpen(false)
-    setNewPassword("")
-    setConfirmPassword("")
-    setSelectedUserForPassword(null)
+    changePasswordMutation.mutate(
+      {
+        userId: selectedUserForPassword.id,
+        password: newPassword,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Mot de passe modifié avec succès")
+          setIsPasswordModalOpen(false)
+          setNewPassword("")
+          setConfirmPassword("")
+          setSelectedUserForPassword(null)
+        },
+        onError: (error: any) => {
+          // Handle password validation errors with details
+          const errorData = error?.response?.data
+          if (errorData) {
+            const errors: Record<string, string> = {}
+            
+            if (errorData.error === "Mot de passe invalide" && errorData.details) {
+              // Display all password validation errors
+              errors.newPassword = errorData.details.join(". ")
+            } else if (errorData.password) {
+              errors.newPassword = Array.isArray(errorData.password) 
+                ? errorData.password.join(". ") 
+                : errorData.password
+            } else if (errorData.error) {
+              errors.newPassword = errorData.error
+            }
+            
+            setPasswordErrors(errors)
+          } else {
+            // Show generic error toast for non-validation errors
+            toast.error("Erreur lors de la modification du mot de passe")
+          }
+        },
+      }
+    )
   }
 
   const handleToggleStatus = (user: User) => {
@@ -729,10 +824,17 @@ export default function UsersPage() {
                   )}
                 </div>
                 {formErrors.password && (
-                  <p className="text-sm text-red-500 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" />
-                    {formErrors.password}
-                  </p>
+                  <div className="space-y-1">
+                    <p className="text-sm text-red-500 flex items-center gap-1 font-medium">
+                      <AlertCircle className="w-3 h-3" />
+                      Mot de passe invalide
+                    </p>
+                    <ul className="text-sm text-red-600 ml-4 list-disc space-y-0.5">
+                      {formErrors.password.split(". ").map((detail, index) => (
+                        <li key={index}>{detail}</li>
+                      ))}
+                    </ul>
+                  </div>
                 )}
                 {formData.password.length > 0 && formData.password.length < 8 && !formErrors.password && (
                   <p className="text-sm text-neutral-500">
@@ -946,10 +1048,17 @@ export default function UsersPage() {
                 )}
               </div>
               {passwordErrors.newPassword && (
-                <p className="text-sm text-red-500 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" />
-                  {passwordErrors.newPassword}
-                </p>
+                <div className="space-y-1">
+                  <p className="text-sm text-red-500 flex items-center gap-1 font-medium">
+                    <AlertCircle className="w-3 h-3" />
+                    Mot de passe invalide
+                  </p>
+                  <ul className="text-sm text-red-600 ml-4 list-disc space-y-0.5">
+                    {passwordErrors.newPassword.split(". ").map((detail, index) => (
+                      <li key={index}>{detail}</li>
+                    ))}
+                  </ul>
+                </div>
               )}
               {newPassword.length > 0 && newPassword.length < 8 && !passwordErrors.newPassword && (
                 <p className="text-sm text-neutral-500">

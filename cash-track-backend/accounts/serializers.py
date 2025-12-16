@@ -21,15 +21,33 @@ class UserCreateSerializer(serializers.ModelSerializer):
         model = User
         fields = ["email", "password", "name", "role", "status"]
     
+    def validate_email(self, value):
+        """Check if email already exists"""
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Un utilisateur avec cet email existe déjà.")
+        return value
+    
     def create(self, validated_data):
+        """Create a new user"""
+        email = validated_data["email"]
+        password = validated_data["password"]
+        status = validated_data.get("status", "active")
+        
+        # Since USERNAME_FIELD = "email", we pass email as the first positional argument
+        # But we also need to pass username since it's in REQUIRED_FIELDS
         user = User.objects.create_user(
-            username=validated_data["email"],
-            email=validated_data["email"],
-            password=validated_data["password"],
-            name=validated_data.get("name", ""),
+            email=email,  # This is the USERNAME_FIELD
+            username=email,  # Required field, use email as username
+            password=password,
+            name=validated_data.get("name") or None,  # Use None instead of empty string
             role=validated_data.get("role", "user"),
-            status=validated_data.get("status", "active"),
+            status=status,
         )
+        
+        # Ensure is_active is set correctly based on status
+        user.is_active = (status == "active")
+        user.save()
+        
         return user
 
 

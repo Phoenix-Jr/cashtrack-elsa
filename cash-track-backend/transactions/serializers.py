@@ -8,8 +8,8 @@ class TransactionSerializer(serializers.ModelSerializer):
     """Serializer for Transaction model"""
     category = CategorySerializer(read_only=True)
     category_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
-    created_by = UserSerializer(read_only=True)
-    modified_by = UserSerializer(read_only=True)
+    created_by = serializers.SerializerMethodField()
+    modified_by = serializers.SerializerMethodField()
     description = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     ref = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     exporter_fournisseur = serializers.CharField(required=False, allow_blank=True, allow_null=True)
@@ -33,6 +33,26 @@ class TransactionSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "balance", "created_by", "created_at", "modified_by", "updated_at"]
+    
+    def get_created_by(self, obj):
+        """Return user info or 'Utilisateur supprimé' if null"""
+        if obj.created_by is None:
+            return {
+                "id": None,
+                "email": None,
+                "name": None,
+                "role": None,
+                "status": None,
+                "created_at": None,
+                "is_superuser": False
+            }
+        return UserSerializer(obj.created_by).data
+    
+    def get_modified_by(self, obj):
+        """Return user info or 'Utilisateur supprimé' if null"""
+        if obj.modified_by is None:
+            return None
+        return UserSerializer(obj.modified_by).data
     
     def get_balance(self, obj):
         """Calculate cumulative balance up to this transaction"""

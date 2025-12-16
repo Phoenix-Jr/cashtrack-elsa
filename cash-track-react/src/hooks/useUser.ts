@@ -31,11 +31,14 @@ export const useCreateUser = () => {
       toast.success("Utilisateur ajouté avec succès");
     },
     onError: (error: any) => {
-      toast.error(
-        error?.response?.data?.error ||
-          error?.response?.data?.message ||
-          "Erreur lors de la création de l'utilisateur"
-      );
+      // Don't show toast here - let the component handle error display in the form
+      // Only show toast for non-validation errors
+      const errorData = error?.response?.data;
+      if (!errorData?.error && !errorData?.password && !errorData?.email) {
+        toast.error(
+          errorData?.message || "Erreur lors de la création de l'utilisateur"
+        );
+      }
     },
   });
 };
@@ -53,11 +56,14 @@ export const useUpdateUser = () => {
       toast.success("Utilisateur modifié avec succès");
     },
     onError: (error: any) => {
-      toast.error(
-        error?.response?.data?.error ||
-          error?.response?.data?.message ||
-          "Erreur lors de la modification de l'utilisateur"
-      );
+      // Don't show toast here - let the component handle error display in the form
+      // Only show toast for non-validation errors
+      const errorData = error?.response?.data;
+      if (!errorData?.email && !errorData?.name && !errorData?.role && !errorData?.status) {
+        toast.error(
+          errorData?.error || errorData?.message || "Erreur lors de la modification de l'utilisateur"
+        );
+      }
     },
   });
 };
@@ -91,11 +97,11 @@ export const useChangePassword = () => {
       userService.changePassword(userId, password),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast.success("Mot de passe modifié avec succès");
+      // Toast will be shown in the component's onSuccess callback
     },
     onError: (error: any) => {
-      const errorMessage = error?.response?.data?.error || error?.response?.data?.details?.[0] || "Erreur lors de la modification du mot de passe";
-      toast.error(errorMessage);
+      // Don't show toast here - let the component handle error display in the form
+      // The component will show detailed password validation errors
     },
   });
 };
