@@ -119,12 +119,10 @@ export default function TransactionsPage() {
     if (typeFilter !== "all") count++
     if (categoryFilter !== "all") count++
     if (authorFilter !== "all") count++
-    if (periodFilter.from) count++
-    if (periodFilter.to) count++
     if (amountMin) count++
     if (amountMax) count++
     return count
-  }, [typeFilter, categoryFilter, authorFilter, periodFilter.from, periodFilter.to, amountMin, amountMax])
+  }, [typeFilter, categoryFilter, authorFilter, amountMin, amountMax])
 
   const resetFilters = () => {
     setTypeFilter("all")
@@ -264,8 +262,8 @@ export default function TransactionsPage() {
     }
   }
 
-  const handleItemsPerPageChange = (value: string) => {
-    setItemsPerPage(Number(value))
+  const handleItemsPerPageChange = (itemsPerPage: number) => {
+    setItemsPerPage(itemsPerPage)
     setCurrentPage(1)
   }
 
@@ -512,16 +510,6 @@ export default function TransactionsPage() {
                       >
                         Auteur: {authorFilter}
                         <X className="w-3 h-3" />
-                      </Badge>
-                    )}
-                    {periodFilter.from && (
-                      <Badge variant="secondary" className="gap-1">
-                        Depuis: {formatDate(periodFilter.from)}
-                      </Badge>
-                    )}
-                    {periodFilter.to && (
-                      <Badge variant="secondary" className="gap-1">
-                        Jusqu&apos;à: {formatDate(periodFilter.to)}
                       </Badge>
                     )}
                     {amountMin && (

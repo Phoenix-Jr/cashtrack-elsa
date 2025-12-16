@@ -18,6 +18,8 @@ import {
   AlertCircle,
   Loader2,
   CheckCircle2,
+  Eye,
+  EyeOff,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -35,9 +37,9 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 
 const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50, 100]
@@ -60,6 +62,9 @@ export default function UsersPage() {
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({})
+  const [showPassword, setShowPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [userToDelete, setUserToDelete] = useState<User | null>(null)
@@ -692,21 +697,33 @@ export default function UsersPage() {
                 <div className="relative">
                   <Input
                     id="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     value={formData.password}
                     onChange={(e) => handleFieldChange("password", e.target.value)}
                     placeholder="Minimum 8 caractères"
                     required={!editingUser}
                     minLength={8}
-                    className={formErrors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""}
+                    className={`pr-10 ${formErrors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""}`}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700 transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
                   {formErrors.password && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <div className="absolute right-10 top-1/2 -translate-y-1/2">
                       <AlertCircle className="w-4 h-4 text-red-500" />
                     </div>
                   )}
-                  {formData.password.length >= 8 && !formErrors.password && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  {formData.password.length >= 8 && !formErrors.password && formData.password.length > 0 && (
+                    <div className="absolute right-10 top-1/2 -translate-y-1/2">
                       <CheckCircle2 className="w-4 h-4 text-green-500" />
                     </div>
                   )}
@@ -725,35 +742,132 @@ export default function UsersPage() {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="role">Rôle</Label>
-              <Select
-                value={formData.role}
-                onValueChange={(value: "admin" | "user" | "readonly") => setFormData({ ...formData, role: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="user">Utilisateur - Opérations de caisse</SelectItem>
-                  <SelectItem value="admin">Administrateur - Accès complet</SelectItem>
-                  <SelectItem value="readonly">Lecture seule - Consultation uniquement</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="role" className="flex items-center gap-2 text-sm">
+                <Shield className="w-3.5 h-3.5" />
+                Rôle <span className="text-red-500">*</span>
+              </Label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormData({ ...formData, role: "user" })
+                    if (formErrors.role) {
+                      setFormErrors({ ...formErrors, role: "" })
+                    }
+                  }}
+                  className={`p-2.5 rounded-lg border-2 transition-all flex items-center gap-2 ${
+                    formData.role === "user"
+                      ? "border-blue-500 bg-blue-500/10 text-blue-600 shadow-sm"
+                      : "border-neutral-200 text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50"
+                  } ${formErrors.role ? "border-red-500" : ""}`}
+                >
+                  <UserCircle className={`w-4 h-4 shrink-0 ${formData.role === "user" ? "text-blue-500" : "text-neutral-400"}`} />
+                  <div className="flex flex-col items-start min-w-0">
+                    <span className="font-medium text-xs">Utilisateur</span>
+                    <span className="text-[10px] opacity-70 truncate w-full">Opérations</span>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormData({ ...formData, role: "admin" })
+                    if (formErrors.role) {
+                      setFormErrors({ ...formErrors, role: "" })
+                    }
+                  }}
+                  className={`p-2.5 rounded-lg border-2 transition-all flex items-center gap-2 ${
+                    formData.role === "admin"
+                      ? "border-purple-500 bg-purple-500/10 text-purple-600 shadow-sm"
+                      : "border-neutral-200 text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50"
+                  } ${formErrors.role ? "border-red-500" : ""}`}
+                >
+                  <Shield className={`w-4 h-4 shrink-0 ${formData.role === "admin" ? "text-purple-500" : "text-neutral-400"}`} />
+                  <div className="flex flex-col items-start min-w-0">
+                    <span className="font-medium text-xs">Admin</span>
+                    <span className="text-[10px] opacity-70 truncate w-full">Accès complet</span>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormData({ ...formData, role: "readonly" })
+                    if (formErrors.role) {
+                      setFormErrors({ ...formErrors, role: "" })
+                    }
+                  }}
+                  className={`p-2.5 rounded-lg border-2 transition-all flex items-center gap-2 ${
+                    formData.role === "readonly"
+                      ? "border-neutral-500 bg-neutral-500/10 text-neutral-700 shadow-sm"
+                      : "border-neutral-200 text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50"
+                  } ${formErrors.role ? "border-red-500" : ""}`}
+                >
+                  <Lock className={`w-4 h-4 shrink-0 ${formData.role === "readonly" ? "text-neutral-600" : "text-neutral-400"}`} />
+                  <div className="flex flex-col items-start min-w-0">
+                    <span className="font-medium text-xs">Lecture seule</span>
+                    <span className="text-[10px] opacity-70 truncate w-full">Consultation</span>
+                  </div>
+                </button>
+              </div>
+              {formErrors.role && (
+                <p className="text-xs text-red-500 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {formErrors.role}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="status">Statut</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value: "active" | "inactive") => setFormData({ ...formData, status: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Actif</SelectItem>
-                  <SelectItem value="inactive">Inactif</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="status" className="flex items-center gap-2 text-sm">
+                <Power className="w-3.5 h-3.5" />
+                Statut <span className="text-red-500">*</span>
+              </Label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormData({ ...formData, status: "active" })
+                    if (formErrors.status) {
+                      setFormErrors({ ...formErrors, status: "" })
+                    }
+                  }}
+                  className={`p-2.5 rounded-lg border-2 transition-all flex items-center gap-2 ${
+                    formData.status === "active"
+                      ? "border-green-500 bg-green-500/10 text-green-600 shadow-sm"
+                      : "border-neutral-200 text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50"
+                  } ${formErrors.status ? "border-red-500" : ""}`}
+                >
+                  <CheckCircle2 className={`w-4 h-4 shrink-0 ${formData.status === "active" ? "text-green-500" : "text-neutral-400"}`} />
+                  <div className="flex flex-col items-start min-w-0">
+                    <span className="font-medium text-xs">Actif</span>
+                    <span className="text-[10px] opacity-70 truncate w-full">Peut se connecter</span>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormData({ ...formData, status: "inactive" })
+                    if (formErrors.status) {
+                      setFormErrors({ ...formErrors, status: "" })
+                    }
+                  }}
+                  className={`p-2.5 rounded-lg border-2 transition-all flex items-center gap-2 ${
+                    formData.status === "inactive"
+                      ? "border-orange-500 bg-orange-500/10 text-orange-600 shadow-sm"
+                      : "border-neutral-200 text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50"
+                  } ${formErrors.status ? "border-red-500" : ""}`}
+                >
+                  <AlertTriangle className={`w-4 h-4 shrink-0 ${formData.status === "inactive" ? "text-orange-500" : "text-neutral-400"}`} />
+                  <div className="flex flex-col items-start min-w-0">
+                    <span className="font-medium text-xs">Inactif</span>
+                    <span className="text-[10px] opacity-70 truncate w-full">Ne peut pas se connecter</span>
+                  </div>
+                </button>
+              </div>
+              {formErrors.status && (
+                <p className="text-xs text-red-500 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {formErrors.status}
+                </p>
+              )}
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={handleCloseModal}>
@@ -795,7 +909,7 @@ export default function UsersPage() {
               <div className="relative">
                 <Input
                   id="newPassword"
-                  type="password"
+                  type={showNewPassword ? "text" : "password"}
                   value={newPassword}
                   onChange={(e) => {
                     setNewPassword(e.target.value)
@@ -806,15 +920,27 @@ export default function UsersPage() {
                   placeholder="Minimum 8 caractères"
                   required
                   minLength={8}
-                  className={passwordErrors.newPassword ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""}
+                  className={`pr-10 ${passwordErrors.newPassword ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""}`}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700 transition-colors"
+                  tabIndex={-1}
+                >
+                  {showNewPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
                 {passwordErrors.newPassword && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <div className="absolute right-10 top-1/2 -translate-y-1/2">
                     <AlertCircle className="w-4 h-4 text-red-500" />
                   </div>
                 )}
-                {newPassword.length >= 8 && !passwordErrors.newPassword && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                {newPassword.length >= 8 && !passwordErrors.newPassword && newPassword.length > 0 && (
+                  <div className="absolute right-10 top-1/2 -translate-y-1/2">
                     <CheckCircle2 className="w-4 h-4 text-green-500" />
                   </div>
                 )}
@@ -838,7 +964,7 @@ export default function UsersPage() {
               <div className="relative">
                 <Input
                   id="confirmPassword"
-                  type="password"
+                  type={showConfirmPassword ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => {
                     setConfirmPassword(e.target.value)
@@ -849,15 +975,27 @@ export default function UsersPage() {
                   placeholder="Répétez le mot de passe"
                   required
                   minLength={8}
-                  className={passwordErrors.confirmPassword ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""}
+                  className={`pr-10 ${passwordErrors.confirmPassword ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""}`}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700 transition-colors"
+                  tabIndex={-1}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
                 {passwordErrors.confirmPassword && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <div className="absolute right-10 top-1/2 -translate-y-1/2">
                     <AlertCircle className="w-4 h-4 text-red-500" />
                   </div>
                 )}
                 {confirmPassword.length > 0 && newPassword === confirmPassword && !passwordErrors.confirmPassword && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <div className="absolute right-10 top-1/2 -translate-y-1/2">
                     <CheckCircle2 className="w-4 h-4 text-green-500" />
                   </div>
                 )}

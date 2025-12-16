@@ -1,10 +1,30 @@
-version: '3.8'
-
 services:
+  db:
+    image: postgres:16-alpine
+    container_name: cash-track-db
+    environment:
+      - POSTGRES_DB=cashtrack
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=hFVfTS14lzFN81qPHX4
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - cash-track-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     build:
       context: ./cash-track-backend
       dockerfile: Dockerfile
+      args:
+        BUILDKIT_INLINE_CACHE: 1
     container_name: cash-track-backend
     ports:
       - "8000:8000"
@@ -13,22 +33,29 @@ services:
     environment:
       - DEBUG=True
       - DJANGO_SETTINGS_MODULE=cash_track_api.settings
+      - DB_ENGINE=postgresql
+      - POSTGRES_DB=cashtrack
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=hFVfTS14lzFN81qPHX4
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
     networks:
       - cash-track-network
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
 
   frontend:
     build:
       context: ./cash-track-react
       dockerfile: Dockerfile
+      args:
+        BUILDKIT_INLINE_CACHE: 1
+        VITE_API_URL: http://localhost:8000/api
     container_name: cash-track-frontend
     ports:
-      - "5173:5173"
-    volumes:
-      - ./cash-track-react:/app
-      - /app/node_modules
-    environment:
-      - VITE_API_URL=http://localhost:8000/api
+      - "80:80"
     networks:
       - cash-track-network
     depends_on:
@@ -38,4 +65,7 @@ services:
 networks:
   cash-track-network:
     driver: bridge
+
+volumes:
+  postgres_data:
 

@@ -1,8 +1,9 @@
-import { useState } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { Search, Bell, Menu, LogOut, User, Settings, CalendarDays, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,9 +17,11 @@ import { Calendar } from "@/components/ui/calendar"
 import { useCurrentUser } from "@/hooks/useAuth"
 import { useLogout } from "@/hooks/useAuth"
 import { useUIStore } from "@/stores/ui-store"
-import { format, startOfMonth } from "date-fns"
+import { format } from "date-fns"
 import { fr } from "date-fns/locale"
 import type { DateRange } from "react-day-picker"
+
+type PeriodType = "today" | "week" | "month" | "year" | "custom" | "all"
 
 export function Header() {
   const { data: user } = useCurrentUser()
@@ -29,31 +32,129 @@ export function Header() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const [isOpen, setIsOpen] = useState(false)
+  const [periodType, setPeriodType] = useState<PeriodType>("month")
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
+  const [isCustomOpen, setIsCustomOpen] = useState(false)
 
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
-    const from = periodFilter.from ? new Date(periodFilter.from) : undefined
-    const to = periodFilter.to ? new Date(periodFilter.to) : undefined
-    return from || to ? { from, to } : undefined
-  })
+  // Show period filter on pages that use date filtering
+  const showPeriodFilter = [
+    "/dashboard/transactions",
+    "/dashboard/analytics",
+    "/dashboard"
+  ].includes(location.pathname)
 
-  const showPeriodFilter = location.pathname === "/dashboard/transactions"
+  // Calculer les dates selon le type de période
+  const getDateRange = (type: PeriodType) => {
+    const now = new Date()
+    let startDate = ""
+    let endDate = ""
 
-  const currentMonth = startOfMonth(new Date())
+    switch (type) {
+      case "today":
+        startDate = endDate = now.toISOString().split("T")[0]
+        break
+      case "week":
+        const weekStart = new Date(now)
+        weekStart.setDate(now.getDate() - now.getDay() + 1)
+        const weekEnd = new Date(weekStart)
+        weekEnd.setDate(weekStart.getDate() + 6)
+        startDate = weekStart.toISOString().split("T")[0]
+        endDate = weekEnd.toISOString().split("T")[0]
+        break
+      case "month":
+        startDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+        endDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${lastDay}`
+        break
+      case "year":
+        startDate = `${now.getFullYear()}-01-01`
+        endDate = `${now.getFullYear()}-12-31`
+        break
+      case "custom":
+        if (dateRange?.from && dateRange?.to) {
+          startDate = format(dateRange.from, "yyyy-MM-dd")
+          endDate = format(dateRange.to, "yyyy-MM-dd")
+        }
+        break
+      case "all":
+        startDate = ""
+        endDate = ""
+        break
+    }
+
+    return { startDate, endDate }
+  }
+
+  // Détecter le type de période actuel depuis les filtres et mettre à jour dateRange
+  useEffect(() => {
+    // Toujours mettre à jour dateRange pour le calendrier
+    if (periodFilter.from && periodFilter.to) {
+      setDateRange({
+        from: new Date(periodFilter.from),
+        to: new Date(periodFilter.to),
+      })
+    } else {
+      setDateRange(undefined)
+    }
+
+    if (!periodFilter.from || !periodFilter.to) {
+      setPeriodType("all")
+      return
+    }
+
+    const now = new Date()
+    const today = now.toISOString().split("T")[0]
+    const weekStart = new Date(now)
+    weekStart.setDate(now.getDate() - now.getDay() + 1)
+    const weekStartStr = weekStart.toISOString().split("T")[0]
+    const weekEnd = new Date(weekStart)
+    weekEnd.setDate(weekStart.getDate() + 6)
+    const weekEndStr = weekEnd.toISOString().split("T")[0]
+    const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+    const monthEnd = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${lastDay}`
+    const yearStart = `${now.getFullYear()}-01-01`
+    const yearEnd = `${now.getFullYear()}-12-31`
+
+    if (periodFilter.from === today && periodFilter.to === today) {
+      setPeriodType("today")
+    } else if (periodFilter.from === weekStartStr && periodFilter.to === weekEndStr) {
+      setPeriodType("week")
+    } else if (periodFilter.from === monthStart && periodFilter.to === monthEnd) {
+      setPeriodType("month")
+    } else if (periodFilter.from === yearStart && periodFilter.to === yearEnd) {
+      setPeriodType("year")
+    } else {
+      setPeriodType("custom")
+    }
+  }, [periodFilter.from, periodFilter.to])
+
+  // Appliquer le filtre de période
+  const handlePeriodChange = (type: PeriodType) => {
+    setPeriodType(type)
+    const { startDate, endDate } = getDateRange(type)
+    setPeriodFilter(startDate, endDate)
+    
+    // Mettre à jour dateRange pour le calendrier
+    if (startDate && endDate) {
+      setDateRange({
+        from: new Date(startDate),
+        to: new Date(endDate),
+      })
+    } else {
+      setDateRange(undefined)
+    }
+  }
 
   const handleDateRangeChange = (range: DateRange | undefined) => {
     setDateRange(range)
     if (range?.from && range?.to) {
-      const fromStr = format(range.from, "yyyy-MM-dd")
-      const toStr = format(range.to, "yyyy-MM-dd")
-      setPeriodFilter(fromStr, toStr)
+      const startDate = format(range.from, "yyyy-MM-dd")
+      const endDate = format(range.to, "yyyy-MM-dd")
+      setPeriodFilter(startDate, endDate)
+      // Mettre à jour le type de période à "custom" quand l'utilisateur sélectionne manuellement
+      setPeriodType("custom")
     }
-  }
-
-  const handleClearFilter = () => {
-    setDateRange(undefined)
-    setPeriodFilter("", "")
-    setIsOpen(false)
   }
 
   const handleLogout = () => {
@@ -68,18 +169,93 @@ export function Header() {
         .toUpperCase()
     : "U"
 
-  const hasActiveFilter = periodFilter.from || periodFilter.to
+  // Fonction pour obtenir le texte d'une période avec ses dates
+  const getPeriodText = (type: PeriodType) => {
+    const now = new Date()
+    let fromDate: Date
+    let toDate: Date
+
+    switch (type) {
+      case "today":
+        fromDate = toDate = now
+        const day = format(fromDate, "d MMM yyyy", { locale: fr })
+        return `Aujourd'hui (${day})`
+      case "week": {
+        fromDate = new Date(now)
+        fromDate.setDate(now.getDate() - now.getDay() + 1)
+        toDate = new Date(fromDate)
+        toDate.setDate(fromDate.getDate() + 6)
+        const from = format(fromDate, "d MMM", { locale: fr })
+        const to = format(toDate, "d MMM yyyy", { locale: fr })
+        return `Cette semaine (${from} - ${to})`
+      }
+      case "month": {
+        fromDate = new Date(now.getFullYear(), now.getMonth(), 1)
+        toDate = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+        const monthLabel = format(fromDate, "MMMM yyyy", { locale: fr })
+        return `Ce mois (${monthLabel})`
+      }
+      case "year": {
+        fromDate = new Date(now.getFullYear(), 0, 1)
+        toDate = new Date(now.getFullYear(), 11, 31)
+        const yearLabel = format(fromDate, "yyyy", { locale: fr })
+        return `Cette année (${yearLabel})`
+      }
+      case "custom": {
+        if (dateRange?.from && dateRange?.to) {
+          const from = format(dateRange.from, "d MMM yyyy", { locale: fr })
+          const to = format(dateRange.to, "d MMM yyyy", { locale: fr })
+          return `Personnalisé (${from} - ${to})`
+        }
+        return "Personnalisé"
+      }
+      case "all":
+      default:
+        return "Toutes les périodes"
+    }
+  }
 
   const getDisplayText = () => {
-    if (!hasActiveFilter) return "Sélectionner une période"
+    // Si aucune période n'est appliquée
+    if (!periodFilter.from || !periodFilter.to) {
+      return "Toutes les périodes"
+    }
 
-    const from = periodFilter.from ? format(new Date(periodFilter.from), "d MMM yyyy", { locale: fr }) : ""
-    const to = periodFilter.to ? format(new Date(periodFilter.to), "d MMM yyyy", { locale: fr }) : ""
+    const fromDate = new Date(periodFilter.from)
+    const toDate = new Date(periodFilter.to)
 
-    if (from && to) return `${from} - ${to}`
-    if (from) return `Depuis ${from}`
-    if (to) return `Jusqu'au ${to}`
-    return "Sélectionner une période"
+    switch (periodType) {
+      case "today": {
+        const day = format(fromDate, "d MMM yyyy", { locale: fr })
+        return `Aujourd'hui (${day})`
+      }
+      case "week": {
+        const from = format(fromDate, "d MMM", { locale: fr })
+        const to = format(toDate, "d MMM yyyy", { locale: fr })
+        return `Cette semaine (${from} - ${to})`
+      }
+      case "month": {
+        const monthLabel = format(fromDate, "MMMM yyyy", { locale: fr })
+        return `Ce mois (${monthLabel})`
+      }
+      case "year": {
+        const yearLabel = format(fromDate, "yyyy", { locale: fr })
+        return `Cette année (${yearLabel})`
+      }
+      case "custom": {
+        if (dateRange?.from && dateRange?.to) {
+          const from = format(dateRange.from, "d MMM yyyy", { locale: fr })
+          const to = format(dateRange.to, "d MMM yyyy", { locale: fr })
+          return `${from} - ${to}`
+        }
+        const from = format(fromDate, "d MMM yyyy", { locale: fr })
+        const to = format(toDate, "d MMM yyyy", { locale: fr })
+        return `${from} - ${to}`
+      }
+      case "all":
+      default:
+        return "Toutes les périodes"
+    }
   }
 
   return (
@@ -107,72 +283,41 @@ export function Header() {
         </div>
 
         {showPeriodFilter && (
-          <div className="hidden md:flex items-center">
-            <Popover open={isOpen} onOpenChange={setIsOpen}>
+          <div className="hidden md:flex items-center gap-2">
+            <Select value={periodType} onValueChange={(value: PeriodType) => handlePeriodChange(value)}>
+              <SelectTrigger className="w-[260px] bg-white">
+                <CalendarDays className="w-4 h-4 mr-2 shrink-0" />
+                <span className="truncate text-sm">{getDisplayText()}</span>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="today">{getPeriodText("today")}</SelectItem>
+                <SelectItem value="week">{getPeriodText("week")}</SelectItem>
+                <SelectItem value="month">{getPeriodText("month")}</SelectItem>
+                <SelectItem value="year">{getPeriodText("year")}</SelectItem>
+                <SelectItem value="all">{getPeriodText("all")}</SelectItem>
+                <SelectItem value="custom">{getPeriodText("custom")}</SelectItem>
+              </SelectContent>
+            </Select>
+            <Popover open={isCustomOpen} onOpenChange={setIsCustomOpen}>
               <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={`gap-2 min-w-[240px] justify-start bg-white ${hasActiveFilter ? "border-[#0B177C] text-[#0B177C]" : "text-neutral-600"}`}
-                >
-                  <CalendarDays className="w-4 h-4 shrink-0" />
-                  <span className="text-sm truncate">{getDisplayText()}</span>
-                  {hasActiveFilter && (
-                    <X
-                      className="w-4 h-4 ml-auto shrink-0 hover:text-red-500"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleClearFilter()
-                      }}
-                    />
-                  )}
+                <Button variant="outline" className="gap-2 bg-white min-w-[200px]">
+                  <CalendarDays className="w-4 h-4" />
+                  <span className="text-sm truncate">
+                    {dateRange?.from && dateRange?.to
+                      ? `${format(dateRange.from, "d MMM", { locale: fr })} - ${format(dateRange.to, "d MMM", { locale: fr })}`
+                      : "Sélectionner dates"}
+                  </span>
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-4" align="center">
-                {/* Selected range display at top */}
-                <div className="mb-4 pb-3 border-b border-neutral-200">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm">
-                      {dateRange?.from ? (
-                        <span className="text-neutral-700">
-                          <span className="font-semibold text-neutral-900">
-                            {format(dateRange.from, "d MMMM yyyy", { locale: fr })}
-                          </span>
-                          {dateRange?.to && (
-                            <>
-                              <span className="mx-2 text-neutral-400">→</span>
-                              <span className="font-semibold text-neutral-900">
-                                {format(dateRange.to, "d MMMM yyyy", { locale: fr })}
-                              </span>
-                            </>
-                          )}
-                        </span>
-                      ) : (
-                        <span className="text-neutral-400">Cliquez pour sélectionner une période</span>
-                      )}
-                    </div>
-                    {dateRange && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleClearFilter}
-                        className="text-neutral-500 hover:text-red-500 h-7 px-2"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Calendar component */}
+              <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="range"
-                  defaultMonth={dateRange?.from || currentMonth}
                   selected={dateRange}
                   onSelect={handleDateRangeChange}
                   numberOfMonths={2}
                   locale={fr}
-                  disabled={{ after: new Date() }}
-                  className="rounded-lg border shadow-sm"
+                  defaultMonth={dateRange?.from || new Date()}
+                  disabled={(date) => date > new Date()}
                 />
               </PopoverContent>
             </Popover>

@@ -50,8 +50,9 @@ class TransactionListCreateView(generics.ListCreateAPIView):
             queryset = queryset.filter(created_by__name__icontains=author)
         
         # Filter by creation date range (created_at)
-        created_at_from = self.request.query_params.get("created_at_from")
-        created_at_to = self.request.query_params.get("created_at_to")
+        # Support both date_from/date_to and created_at_from/created_at_to for compatibility
+        created_at_from = self.request.query_params.get("created_at_from") or self.request.query_params.get("date_from")
+        created_at_to = self.request.query_params.get("created_at_to") or self.request.query_params.get("date_to")
         if created_at_from:
             queryset = queryset.filter(created_at__gte=created_at_from)
         if created_at_to:

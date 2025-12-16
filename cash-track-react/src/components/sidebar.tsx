@@ -35,7 +35,6 @@ const navigationItems = [
   { id: "categories", label: "Catégories", icon: FolderOpen, href: "/dashboard/categories", requiresAdmin: false },
   { id: "users", label: "Utilisateurs", icon: Users, href: "/dashboard/users", requiresAdmin: true },
   { id: "analytics", label: "Statistiques", icon: BarChart3, href: "/dashboard/analytics", requiresAdmin: false },
-  { id: "reports", label: "Rapports", icon: FileText, href: "/dashboard/reports", requiresAdmin: false },
   { id: "settings", label: "Paramètres", icon: Settings, href: "/dashboard/settings", requiresAdmin: false },
 ]
 

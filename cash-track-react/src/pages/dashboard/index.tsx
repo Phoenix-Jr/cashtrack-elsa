@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useCurrentUser } from "@/hooks/useAuth"
 import { useTransactions, useDashboardStats, useAnalytics } from "@/hooks/useTransaction"
+import { useUIStore } from "@/stores/ui-store"
 import { formatCurrency, formatDate } from "@/lib/format"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { KPICard } from "@/components/kpi-card"
@@ -45,12 +46,13 @@ const COLORS = ["#10B981", "#EF4444", "#8B5CF6", "#F59E0B", "#0B177C", "#EC4899"
 export default function DashboardPage() {
   const navigate = useNavigate()
   const { data: user } = useCurrentUser()
+  const periodFilter = useUIStore((state) => state.periodFilter)
   const { data: transactionsData } = useTransactions({ page_size: 5 })
   const { data: stats } = useDashboardStats()
   
-  // Get analytics data for last 30 days
-  const dateFrom = format(subDays(new Date(), 30), "yyyy-MM-dd")
-  const dateTo = format(new Date(), "yyyy-MM-dd")
+  // Get analytics data using period filter, fallback to last 30 days if no filter
+  const dateFrom = periodFilter.from || format(subDays(new Date(), 30), "yyyy-MM-dd")
+  const dateTo = periodFilter.to || format(new Date(), "yyyy-MM-dd")
   const { data: analyticsData } = useAnalytics({ date_from: dateFrom, date_to: dateTo })
 
   const transactions = transactionsData?.results || []
