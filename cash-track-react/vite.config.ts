@@ -3,36 +3,48 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 import { fileURLToPath } from "url";
 import tailwindcss from "@tailwindcss/vite";
+import tsconfigPaths from "vite-tsconfig-paths";
 import fs from "fs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Plugin personnalisé pour résoudre les imports avec extensions
+// Plugin personnalisé pour résoudre les imports avec extensions dans Docker
 const resolveExtensionsPlugin = () => {
   return {
     name: "resolve-extensions",
-    resolveId(id: string, importer?: string) {
-      // Si l'ID commence par @/, essayer de résoudre avec les extensions
-      if (id.startsWith("@/")) {
-        const relativePath = id.replace("@/", "");
-        const srcPath = path.resolve(__dirname, "./src");
+    enforce: "pre",
+    resolveId(id: string) {
+      // Si l'ID est un chemin absolu sans extension (comme /app/src/lib/format)
+      if (id.startsWith("/app/src/") && !id.match(/\.[^./]+$/)) {
         const extensions = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".mts"];
-        
         for (const ext of extensions) {
-          const fullPath = path.resolve(srcPath, relativePath + ext);
-          if (fs.existsSync(fullPath)) {
-            return fullPath;
+          const fullPath = id + ext;
+          try {
+            if (fs.existsSync(fullPath)) {
+              return fullPath;
+            }
+          } catch (e) {
+            // Ignorer les erreurs
           }
         }
-        
-        // Essayer aussi sans extension (pour les dossiers avec index)
-        const dirPath = path.resolve(srcPath, relativePath);
-        if (fs.existsSync(dirPath) && fs.statSync(dirPath).isDirectory()) {
-          for (const ext of extensions) {
-            const indexPath = path.resolve(dirPath, `index${ext}`);
-            if (fs.existsSync(indexPath)) {
-              return indexPath;
+      }
+      return null;
+    },
+    load(id: string) {
+      // Intercepter les tentatives de chargement de fichiers sans extension
+      if (id.startsWith("/app/src/") && !id.match(/\.[^./]+$/)) {
+        const extensions = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".mts"];
+        for (const ext of extensions) {
+          const fullPath = id + ext;
+          try {
+            if (fs.existsSync(fullPath)) {
+              return {
+                code: fs.readFileSync(fullPath, "utf-8"),
+                map: null,
+              };
             }
+          } catch (e) {
+            // Ignorer les erreurs
           }
         }
       }
@@ -44,6 +56,7 @@ const resolveExtensionsPlugin = () => {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
+    tsconfigPaths(),
     resolveExtensionsPlugin(),
     react({
       jsxRuntime: "automatic",
