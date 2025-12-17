@@ -19,7 +19,10 @@ RUN pnpm install --frozen-lockfile
  
 # Copier le reste du code source (inclut src, public, configs, etc.)
 COPY . .
- 
+
+# Vérifier que les fichiers critiques existent
+RUN ls -la /app/src/lib/format.ts || (echo "ERROR: format.ts not found" && exit 1)
+
 # Construire l'application pour la production
 RUN pnpm build
  
