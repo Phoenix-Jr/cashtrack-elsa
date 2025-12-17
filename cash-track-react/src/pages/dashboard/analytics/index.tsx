@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { KPICard } from "@/components/kpi-card"
 import { useAnalytics } from "@/hooks/useTransaction"
 import { useUIStore } from "@/stores/ui-store"
-import { formatCurrency } from "src/lib/format.ts"
+// import { formatCurrency } from "src/lib/format.ts"
 import {
   ResponsiveContainer,
   AreaChart,
@@ -22,6 +22,16 @@ import {
 } from "recharts"
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
+
+ function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "XOF",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount)
+}
+
 
 const COLORS = ["#0B177C", "#10B981", "#8B5CF6", "#F59E0B", "#EF4444", "#EC4899", "#14B8A6", "#F97316"]
 
