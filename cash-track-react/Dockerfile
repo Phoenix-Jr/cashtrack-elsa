@@ -7,13 +7,17 @@ RUN npm install -g pnpm
 # Définir le répertoire de travail
 WORKDIR /app
  
+# Argument de build pour l'URL de l'API
+ARG VITE_API_URL=http://localhost:8000/api
+ENV VITE_API_URL=$VITE_API_URL
+ 
 # Copier les fichiers de configuration
 COPY package.json pnpm-lock.yaml* ./
  
 # Installer les dépendances
 RUN pnpm install --frozen-lockfile
  
-# Copier le reste du code source
+# Copier le reste du code source (inclut src, public, configs, etc.)
 COPY . .
  
 # Construire l'application pour la production
