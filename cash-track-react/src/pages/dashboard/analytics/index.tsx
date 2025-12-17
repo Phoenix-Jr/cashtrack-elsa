@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { KPICard } from "@/components/kpi-card"
 import { useAnalytics } from "@/hooks/useTransaction"
 import { useUIStore } from "@/stores/ui-store"
-import { formatCurrency } from "@/lib/format"
+import { formatCurrency } from "@/lib/format.ts"
 import {
   ResponsiveContainer,
   AreaChart,
