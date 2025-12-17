@@ -52,7 +52,7 @@ services:
       dockerfile: Dockerfile
       args:
         BUILDKIT_INLINE_CACHE: 1
-        VITE_API_URL: http://localhost:8000/api
+        VITE_API_URL: /api
     container_name: cash-track-frontend
     ports:
       - "80:80"

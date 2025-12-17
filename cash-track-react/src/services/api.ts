@@ -120,8 +120,19 @@ export class ApiClientError extends Error {
 }
 
 // Create axios instance
+// Use relative URL if VITE_API_URL is not set or if it's the same origin
+// This allows nginx proxy to handle API requests
+const getApiBaseURL = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl && !envUrl.startsWith('/')) {
+    return envUrl; // Use full URL if provided
+  }
+  // Use relative URL to leverage nginx proxy
+  return envUrl || "/api";
+};
+
 const apiClient: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000/api",
+  baseURL: getApiBaseURL(),
   timeout: 10000,
   withCredentials: false,
 });

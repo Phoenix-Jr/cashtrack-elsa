@@ -26,7 +26,7 @@ RUN pnpm build
 # Étape de production
 FROM nginx:alpine
  
-# Créer un fichier de configuration nginx personnalisé pour gérer les routes SPA
+# Créer un fichier de configuration nginx personnalisé pour gérer les routes SPA et proxy API
 RUN rm -rf /etc/nginx/conf.d/*
 COPY <<'EOF' /etc/nginx/conf.d/default.conf
 server {
@@ -34,10 +34,23 @@ server {
     server_name _;
     root /usr/share/nginx/html;
     index index.html;
- 
+
     # Compression gzip
     gzip on;
     gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+   
+    # Proxy pour les requêtes API vers le backend
+    location /api/ {
+        proxy_pass http://backend:8000/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
    
     # Ne pas mettre en cache les fichiers HTML
     location ~* \.(?:html)$ {
