@@ -17,8 +17,16 @@ COPY package.json pnpm-lock.yaml* ./
 # Installer les dépendances
 RUN pnpm install --frozen-lockfile
  
-# Copier le reste du code source (inclut src, public, configs, etc.)
-COPY . .
+# Copier les fichiers de configuration nécessaires
+COPY tsconfig*.json ./
+COPY vite.config.ts ./
+COPY index.html ./
+COPY eslint.config.js ./
+COPY firebase.json ./
+
+# Copier le code source
+COPY src ./src
+COPY public ./public
 
 # Vérifier que les fichiers critiques existent
 RUN ls -la /app/src/lib/format.ts || (echo "ERROR: format.ts not found" && exit 1)
