@@ -11,25 +11,14 @@ WORKDIR /app
 ARG VITE_API_URL=http://localhost:8000/api
 ENV VITE_API_URL=$VITE_API_URL
  
-# Copier les fichiers de configuration
-COPY package.json pnpm-lock.yaml* ./
+# Copier tous les fichiers (le .dockerignore exclura node_modules, dist, etc.)
+COPY . .
+
+# Vérifier que les fichiers critiques existent AVANT l'installation
+RUN test -f /app/src/lib/format.ts || (echo "ERROR: format.ts not found" && echo "=== Contenu de /app ===" && ls -la /app/ && echo "=== Contenu de /app/src ===" && ls -la /app/src/ 2>/dev/null || echo "src not found" && exit 1)
  
 # Installer les dépendances
 RUN pnpm install --frozen-lockfile
- 
-# Copier les fichiers de configuration nécessaires
-COPY tsconfig*.json ./
-COPY vite.config.ts ./
-COPY index.html ./
-COPY eslint.config.js ./
-COPY firebase.json ./
-
-# Copier le code source
-COPY src ./src
-COPY public ./public
-
-# Vérifier que les fichiers critiques existent
-RUN ls -la /app/src/lib/format.ts || (echo "ERROR: format.ts not found" && exit 1)
 
 # Construire l'application pour la production
 RUN pnpm build
