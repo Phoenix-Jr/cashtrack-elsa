@@ -11,12 +11,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir --root-user-action=ignore -r requirements.txt
 
-# Copy application
+# Copy application (excluding entrypoint.sh to handle it separately)
 COPY . .
 
-# Copy and setup entrypoint
-COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
+# Ensure entrypoint.sh exists and has correct permissions
+RUN if [ ! -f /app/entrypoint.sh ]; then \
+        echo "ERROR: entrypoint.sh not found after COPY" && \
+        find /app -name "entrypoint.sh" && \
+        exit 1; \
+    fi && \
+    chmod +x /app/entrypoint.sh && \
+    sed -i 's/\r$//' /app/entrypoint.sh && \
+    head -1 /app/entrypoint.sh | grep -q "^#!" || (echo "ERROR: Missing shebang in entrypoint.sh" && exit 1)
 
 # Create directories
 RUN mkdir -p /app/media /app/staticfiles
