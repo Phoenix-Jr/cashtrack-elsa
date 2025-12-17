@@ -2,7 +2,14 @@ import { Header } from "@/components/header"
 import { Sidebar } from "@/components/sidebar"
 import { Outlet } from "react-router-dom"
 import { useUIStore } from "@/stores/ui-store"
-import { cn } from "@/lib/utils"
+// import { cn } from "@/lib/utils"
+import { clsx, type ClassValue } from 'clsx'
+import { twMerge } from 'tailwind-merge'
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
 
 export default function DashboardLayout() {
   const isSidebarCollapsed = useUIStore((state) => state.isSidebarCollapsed)
