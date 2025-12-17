@@ -15,7 +15,8 @@ ENV VITE_API_URL=$VITE_API_URL
 COPY package.json pnpm-lock.yaml* ./
 
 # Installer les dépendances
-RUN pnpm install --frozen-lockfile
+# Note: --no-frozen-lockfile utilisé temporairement jusqu'à ce que le lockfile soit synchronisé
+RUN pnpm install --no-frozen-lockfile
 
 # Copier le reste du code source
 COPY . .
