@@ -55,7 +55,7 @@ services:
         VITE_API_URL: /api
     container_name: cash-track-frontend
     ports:
-      - "80:80"
+      - "81:80"
     networks:
       - cash-track-network
     depends_on:
