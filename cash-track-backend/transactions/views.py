@@ -6,8 +6,8 @@ from django.db.models import Q, Sum, Count
 from django.utils import timezone
 from datetime import datetime, timedelta
 from decimal import Decimal
-from .models import Transaction
-from .serializers import TransactionSerializer
+from .models import Transaction, TransactionHistory
+from .serializers import TransactionSerializer, TransactionHistorySerializer
 from .permissions import IsAdminRole, IsOwnerOrAdmin, IsNotReadOnly
 from .pagination import TransactionPagination
 
@@ -88,7 +88,9 @@ class TransactionListCreateView(generics.ListCreateAPIView):
         return queryset
     
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        instance = serializer.save(created_by=self.request.user)
+        # Pass user to signal for history tracking
+        instance._history_user = self.request.user
 
 
 class TransactionDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -109,7 +111,24 @@ class TransactionDetailView(generics.RetrieveUpdateDestroyAPIView):
         return [IsAuthenticated()]
     
     def perform_update(self, serializer):
+        instance = serializer.instance
+        # Store old values for change tracking
+        instance._old_values = {
+            'type': instance.type,
+            'description': instance.description,
+            'amount': instance.amount,
+            'ref': instance.ref,
+            'exporter_fournisseur': instance.exporter_fournisseur,
+            'category_id': instance.category_id,
+        }
+        # Pass user to signal for history tracking
+        instance._history_user = self.request.user
         serializer.save(modified_by=self.request.user)
+    
+    def perform_destroy(self, instance):
+        # Pass user to signal for history tracking
+        instance._history_user = self.request.user
+        instance.delete()
 
 
 @api_view(["GET"])
@@ -282,3 +301,127 @@ def analytics_view(request):
         "date_from": date_from,
         "date_to": date_to,
     })
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def transaction_history_view(request):
+    """Get transaction history (all actions: create, update, delete)"""
+    queryset = TransactionHistory.objects.select_related("performed_by").all()
+    
+    # Filter by transaction_id if provided
+    transaction_id = request.query_params.get("transaction_id")
+    if transaction_id:
+        try:
+            queryset = queryset.filter(transaction_id=int(transaction_id))
+        except ValueError:
+            pass
+    
+    # Filter by action if provided
+    action = request.query_params.get("action")
+    if action in ["created", "updated", "deleted"]:
+        queryset = queryset.filter(action=action)
+    
+    # Filter by user (performed_by) if provided
+    user_id = request.query_params.get("user_id")
+    if user_id:
+        try:
+            queryset = queryset.filter(performed_by_id=int(user_id))
+        except ValueError:
+            pass
+    
+    # Filter by date range
+    date_from = request.query_params.get("date_from")
+    date_to = request.query_params.get("date_to")
+    if date_from:
+        queryset = queryset.filter(created_at__gte=date_from)
+    if date_to:
+        try:
+            end_date = datetime.strptime(date_to, "%Y-%m-%d").date()
+            end_datetime = timezone.make_aware(datetime.combine(end_date, datetime.max.time()))
+            queryset = queryset.filter(created_at__lte=end_datetime)
+        except ValueError:
+            queryset = queryset.filter(created_at__lte=date_to)
+    
+    # Calculate stats for the filtered queryset
+    total_actions = queryset.count()
+    created_count = queryset.filter(action="created").count()
+    updated_count = queryset.filter(action="updated").count()
+    deleted_count = queryset.filter(action="deleted").count()
+    
+    # Calculate amounts from transaction_data
+    total_recettes = 0
+    total_depenses = 0
+    
+    for history_item in queryset:
+        if history_item.transaction_data and history_item.transaction_data.get("amount"):
+            try:
+                amount = float(history_item.transaction_data["amount"])
+                if history_item.transaction_data.get("type") == "recette":
+                    total_recettes += amount
+                else:
+                    total_depenses += abs(amount)
+            except (ValueError, TypeError):
+                pass
+    
+    # Get unique users who performed actions
+    unique_users = queryset.exclude(performed_by__isnull=True).values(
+        "performed_by__id", "performed_by__name", "performed_by__email"
+    ).distinct()
+    
+    total_count = queryset.count()
+    
+    # Check if user wants all results (no pagination)
+    get_all = request.query_params.get("all", "false").lower() == "true"
+    
+    if get_all:
+        # Return all results without pagination
+        history_items = queryset.all()
+        serializer = TransactionHistorySerializer(history_items, many=True)
+        
+        return Response({
+            "results": serializer.data,
+            "count": total_count,
+            "page": 1,
+            "page_size": total_count,
+            "next": None,
+            "previous": None,
+            "stats": {
+                "total_actions": total_actions,
+                "created_count": created_count,
+                "updated_count": updated_count,
+                "deleted_count": deleted_count,
+                "total_recettes": float(total_recettes),
+                "total_depenses": float(total_depenses),
+            },
+            "users": list(unique_users),
+        })
+    else:
+        # Pagination
+        page_size = int(request.query_params.get("page_size", 50))
+        page = int(request.query_params.get("page", 1))
+        
+        start = (page - 1) * page_size
+        end = start + page_size
+        
+        history_items = queryset[start:end]
+        
+        serializer = TransactionHistorySerializer(history_items, many=True)
+        
+        return Response({
+            "results": serializer.data,
+            "count": total_count,
+            "page": page,
+            "page_size": page_size,
+            "next": f"?page={page + 1}&page_size={page_size}" if end < total_count else None,
+            "previous": f"?page={page - 1}&page_size={page_size}" if page > 1 else None,
+            "stats": {
+                "total_actions": total_actions,
+                "created_count": created_count,
+                "updated_count": updated_count,
+                "deleted_count": deleted_count,
+                "total_recettes": float(total_recettes),
+                "total_depenses": float(total_depenses),
+            },
+            "users": list(unique_users),
+        })

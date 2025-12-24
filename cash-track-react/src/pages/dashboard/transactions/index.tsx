@@ -15,6 +15,8 @@ import {
   Filter,
   X,
   Tag,
+  Eye,
+  Truck,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -33,6 +35,13 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { TransactionModal } from "@/components/transaction-modal"
 import { KPICard } from "@/components/kpi-card"
 import { Pagination } from "@/components/pagination"
@@ -61,6 +70,7 @@ export default function TransactionsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
   const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [viewingTransaction, setViewingTransaction] = useState<Transaction | null>(null)
   const [itemsPerPage, setItemsPerPage] = useState(10)
 
   const [showFilters, setShowFilters] = useState(false)
@@ -596,7 +606,10 @@ export default function TransactionsPage() {
                     </tr>
                   ) : (
                     transactions.map((transaction) => (
-                      <tr key={transaction.id} className="hover:bg-neutral-50/50 transition-colors group">
+                      <tr 
+                        key={transaction.id} 
+                        className="hover:bg-neutral-50/50 transition-colors group"
+                      >
                         <td className="px-6 py-4 text-sm text-neutral-700">{transaction.createdAt ? formatDate(transaction.createdAt) : ""}</td>
                         <td className="px-6 py-4">
                           <Badge
@@ -690,35 +703,69 @@ export default function TransactionsPage() {
                           )}
                         </td>
                         <td className="px-6 py-4">
-                          {!isReadOnly && (isAdmin || transaction.createdById === currentUser?.id) && (
-                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              {(isAdmin || transaction.createdById === currentUser?.id) && (
+                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() => {
-                                    setEditingTransaction(transaction)
-                                    setIsModalOpen(true)
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setViewingTransaction(transaction)
                                   }}
                                   className="h-8 w-8 text-neutral-500 hover:text-[#0B177C] hover:bg-[#0B177C]/10"
                                 >
-                                  <Pencil className="w-4 h-4" />
+                                  <Eye className="w-4 h-4" />
                                 </Button>
-                              )}
-                              {isAdmin && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => setDeletingId(transaction.id)}
-                                  className="h-8 w-8 text-neutral-500 hover:text-[#EF4444] hover:bg-[#EF4444]/10"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              )}
-                            </div>
-                          )}
+                              </TooltipTrigger>
+                              <TooltipContent>Voir les détails</TooltipContent>
+                            </Tooltip>
+                            {!isReadOnly && (isAdmin || transaction.createdById === currentUser?.id) && (
+                              <>
+                                {(isAdmin || transaction.createdById === currentUser?.id) && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          setEditingTransaction(transaction)
+                                          setIsModalOpen(true)
+                                        }}
+                                        className="h-8 w-8 text-neutral-500 hover:text-[#0B177C] hover:bg-[#0B177C]/10"
+                                      >
+                                        <Pencil className="w-4 h-4" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Modifier</TooltipContent>
+                                  </Tooltip>
+                                )}
+                                {isAdmin && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          setDeletingId(transaction.id)
+                                        }}
+                                        className="h-8 w-8 text-neutral-500 hover:text-[#EF4444] hover:bg-[#EF4444]/10"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Supprimer</TooltipContent>
+                                  </Tooltip>
+                                )}
+                              </>
+                            )}
+                          </div>
                           {(isReadOnly || (!isAdmin && transaction.createdById !== currentUser?.id)) && (
-                            <div className="text-xs text-neutral-400 italic text-right">Lecture seule</div>
+                            <div className="text-xs text-neutral-400 italic text-right opacity-0 group-hover:opacity-100 transition-opacity">
+                              Lecture seule
+                            </div>
                           )}
                         </td>
                       </tr>
@@ -773,6 +820,186 @@ export default function TransactionsPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Transaction Details Dialog */}
+        <Dialog open={viewingTransaction !== null} onOpenChange={() => setViewingTransaction(null)}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            {viewingTransaction && (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Eye className="w-5 h-5" />
+                    Détails de l'opération
+                  </DialogTitle>
+                  <DialogDescription>
+                    Informations complètes de la transaction #{viewingTransaction.id}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-6 py-4">
+                  {/* Type and Amount */}
+                  <div className="flex items-center justify-between p-4 rounded-xl border-2 bg-gradient-to-r from-neutral-50 to-white">
+                    <div className="flex items-center gap-3">
+                      {viewingTransaction.type === "recette" ? (
+                        <TrendingUp className="w-8 h-8 text-[#10B981]" />
+                      ) : (
+                        <TrendingDown className="w-8 h-8 text-[#EF4444]" />
+                      )}
+                      <div>
+                        <p className="text-sm text-neutral-500">Type</p>
+                        <Badge
+                          className={`mt-1 ${
+                            viewingTransaction.type === "recette"
+                              ? "bg-[#10B981]/10 text-[#10B981] hover:bg-[#10B981]/20"
+                              : "bg-[#EF4444]/10 text-[#EF4444] hover:bg-[#EF4444]/20"
+                          } border-0`}
+                        >
+                          {viewingTransaction.type === "recette" ? "Entrée (Recette)" : "Sortie (Dépense)"}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-neutral-500">Montant</p>
+                      <p
+                        className={`text-2xl font-bold mt-1 ${
+                          viewingTransaction.type === "recette" ? "text-[#10B981]" : "text-[#EF4444]"
+                        }`}
+                      >
+                        {viewingTransaction.type === "recette" ? "+" : ""}
+                        {formatCurrency(viewingTransaction.amount)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Details Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Description */}
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-neutral-700 flex items-center gap-2">
+                        <Tag className="w-4 h-4" />
+                        Description
+                      </p>
+                      <p className="text-sm text-neutral-600 bg-neutral-50 p-3 rounded-lg">
+                        {viewingTransaction.description || (
+                          <span className="text-neutral-400 italic">Aucune description</span>
+                        )}
+                      </p>
+                    </div>
+
+                    {/* Category */}
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-neutral-700 flex items-center gap-2">
+                        <Tag className="w-4 h-4" />
+                        Catégorie
+                      </p>
+                      <div className="flex items-center gap-2 bg-neutral-50 p-3 rounded-lg">
+                        {viewingTransaction.category ? (
+                          <>
+                            <div
+                              className="w-3 h-3 rounded-full shrink-0"
+                              style={{ backgroundColor: getCategoryColor(viewingTransaction.category) }}
+                            />
+                            <span className="text-sm text-neutral-600">{viewingTransaction.category}</span>
+                          </>
+                        ) : (
+                          <span className="text-sm text-neutral-400 italic">Non catégorisé</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Reference */}
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-neutral-700 flex items-center gap-2">
+                        <ArrowLeftRight className="w-4 h-4" />
+                        Référence / BL
+                      </p>
+                      <p className="text-sm text-neutral-600 bg-neutral-50 p-3 rounded-lg">
+                        {viewingTransaction.ref || (
+                          <span className="text-neutral-400 italic">Aucune référence</span>
+                        )}
+                      </p>
+                    </div>
+
+                    {/* Exporter/Supplier */}
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-neutral-700 flex items-center gap-2">
+                        {viewingTransaction.type === "recette" ? (
+                          <Store className="w-4 h-4" />
+                        ) : (
+                          <Truck className="w-4 h-4" />
+                        )}
+                        {viewingTransaction.type === "recette" ? "Exportateur / Client" : "Fournisseur"}
+                      </p>
+                      <p className="text-sm text-neutral-600 bg-neutral-50 p-3 rounded-lg">
+                        {viewingTransaction.exporterFournisseur || (
+                          <span className="text-neutral-400 italic">Non renseigné</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Balance */}
+                  <div className="p-4 rounded-xl border-2 border-[#0B177C]/20 bg-[#0B177C]/5">
+                    <p className="text-sm font-medium text-neutral-700 mb-2">Solde après cette opération</p>
+                    <p className="text-xl font-bold text-[#0B177C]">
+                      {formatCurrency(viewingTransaction.balance || 0)}
+                    </p>
+                  </div>
+
+                  {/* Metadata */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-neutral-200">
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium text-neutral-700 flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        Créé par
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#0B177C] to-[#0A1259] flex items-center justify-center text-white text-xs font-semibold">
+                          {viewingTransaction.createdBy?.charAt(0).toUpperCase() || "?"}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-neutral-900">
+                            {viewingTransaction.createdBy || "Utilisateur supprimé"}
+                          </p>
+                          {viewingTransaction.createdAt && (
+                            <p className="text-xs text-neutral-500 flex items-center gap-1 mt-1">
+                              <Clock className="w-3 h-3" />
+                              {new Date(viewingTransaction.createdAt).toLocaleString("fr-FR")}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {viewingTransaction.modifiedBy && (
+                      <div className="space-y-3">
+                        <p className="text-sm font-medium text-neutral-700 flex items-center gap-2">
+                          <Pencil className="w-4 h-4" />
+                          Modifié par
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#0B177C] to-[#0A1259] flex items-center justify-center text-white text-xs font-semibold">
+                            {viewingTransaction.modifiedBy?.charAt(0).toUpperCase() || "?"}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-neutral-900">
+                              {viewingTransaction.modifiedBy}
+                            </p>
+                            {viewingTransaction.modifiedAt && (
+                              <p className="text-xs text-neutral-500 flex items-center gap-1 mt-1">
+                                <Clock className="w-3 h-3" />
+                                {new Date(viewingTransaction.modifiedAt).toLocaleString("fr-FR")}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </TooltipProvider>
   )

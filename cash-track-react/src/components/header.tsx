@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { Search, Bell, Menu, LogOut, User, Settings, CalendarDays, X } from "lucide-react"
+import { Bell, Menu, LogOut, User, Settings, CalendarDays } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -324,17 +324,6 @@ export function Header() {
           </div>
         )}
 
-        {/* Search - hidden on mobile */}
-        <div className="hidden md:flex flex-1 max-w-md mx-8">
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#B8B8B8' }} />
-            <Input
-              type="search"
-              placeholder="Rechercher..."
-              className="w-full pl-10 bg-neutral-50 border-neutral-200 focus:bg-white focus:border-[#0B177C] transition-colors"
-            />
-          </div>
-        </div>
 
         {/* Right section */}
         <div className="flex items-center gap-2">

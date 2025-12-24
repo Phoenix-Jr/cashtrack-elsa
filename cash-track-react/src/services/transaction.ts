@@ -149,7 +149,77 @@ export const transactionService = {
     const response = await apiClient.get(`/transactions/analytics/?${queryParams.toString()}`);
     return response.data;
   },
+
+  getHistory: async (params?: {
+    transaction_id?: number;
+    action?: "created" | "updated" | "deleted";
+    user_id?: number;
+    date_from?: string;
+    date_to?: string;
+    page?: number;
+    page_size?: number;
+    all?: string;
+  }): Promise<{
+    results: TransactionHistory[];
+    count: number;
+    page: number;
+    page_size: number;
+    next: string | null;
+    previous: string | null;
+    stats: {
+      total_actions: number;
+      created_count: number;
+      updated_count: number;
+      deleted_count: number;
+      total_recettes: number;
+      total_depenses: number;
+    };
+    users: Array<{
+      performed_by__id: number;
+      performed_by__name: string;
+      performed_by__email: string;
+    }>;
+  }> => {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+          queryParams.append(key, String(value));
+        }
+      });
+    }
+    const response = await apiClient.get(`/transactions/history/?${queryParams.toString()}`);
+    return response.data;
+  },
 };
+
+export interface TransactionHistory {
+  id: number;
+  transaction_id: number;
+  action: "created" | "updated" | "deleted";
+  action_display: string;
+  transaction_data: {
+    type: string;
+    description?: string;
+    amount: string;
+    ref?: string;
+    exporter_fournisseur?: string;
+    category_id?: number;
+    category_name?: string;
+    created_by_id?: number;
+    created_by_name?: string;
+    created_at?: string;
+    updated_at?: string;
+  };
+  performed_by?: {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+  } | null;
+  created_at: string;
+  changes?: Record<string, { old: string | null; new: string | null }>;
+}
 
 function formatTransaction(data: any): Transaction {
   return {

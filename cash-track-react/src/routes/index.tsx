@@ -12,6 +12,7 @@ const CategoriesPage = lazy(() => import("@/pages/dashboard/categories/index"));
 const UsersPage = lazy(() => import("@/pages/dashboard/users/index"));
 const AnalyticsPage = lazy(() => import("@/pages/dashboard/analytics/index"));
 const SettingsPage = lazy(() => import("@/pages/dashboard/settings/index"));
+const HistoryPage = lazy(() => import("@/pages/dashboard/history/index"));
 
 // Configuration des routes protégées
 const protectedRoutes = [
@@ -20,6 +21,7 @@ const protectedRoutes = [
   { path: "/dashboard/categories", component: CategoriesPage },
   { path: "/dashboard/users", component: UsersPage },
   { path: "/dashboard/analytics", component: AnalyticsPage },
+  { path: "/dashboard/history", component: HistoryPage },
   { path: "/dashboard/settings", component: SettingsPage },
 ];
 

@@ -11,6 +11,8 @@ interface KPICardProps {
   valueColor?: string
   subtitle?: string
   subtitleIcon?: LucideIcon
+  description?: string
+  trend?: number | null
   className?: string
 }
 
@@ -23,6 +25,8 @@ export function KPICard({
   valueColor = "text-neutral-900",
   subtitle,
   subtitleIcon: SubtitleIcon,
+  description,
+  trend,
   className,
 }: KPICardProps) {
   return (
@@ -49,6 +53,11 @@ export function KPICard({
               {subtitle}
             </p>
           </div>
+        )}
+        {description && (
+          <p className={cn("text-xs mt-1", valueColor === "text-white" ? "text-white/70" : "text-neutral-500")}>
+            {description}
+          </p>
         )}
       </CardContent>
     </Card>

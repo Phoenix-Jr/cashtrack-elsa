@@ -2,6 +2,9 @@ from django.db import models
 from django.db.models import Sum, Q
 from django.utils import timezone
 from django.conf import settings
+from django.db.models.signals import post_save, pre_delete
+from django.dispatch import receiver
+import json
 from accounts.models import User
 from categories.models import Category
 
@@ -67,4 +70,50 @@ class Transaction(models.Model):
             total=Sum("amount")
         )["total"] or 0)
         return float(total)
+
+
+class TransactionHistory(models.Model):
+    """Model to track all transaction changes (create, update, delete)"""
+    ACTION_CHOICES = [
+        ("created", "Créé"),
+        ("updated", "Modifié"),
+        ("deleted", "Supprimé"),
+    ]
+
+    transaction_id = models.IntegerField(help_text="ID of the transaction (may not exist if deleted)")
+    action = models.CharField(max_length=20, choices=ACTION_CHOICES)
+    
+    # Store transaction data as JSON for deleted transactions
+    transaction_data = models.JSONField(
+        null=True, 
+        blank=True,
+        help_text="Full transaction data at the time of action (especially for deletions)"
+    )
+    
+    # User who performed the action
+    performed_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        related_name="transaction_history_actions"
+    )
+    
+    # Timestamp
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    # Additional metadata
+    changes = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="For updates: stores what fields were changed (old_value -> new_value)"
+    )
+
+    class Meta:
+        db_table = "transaction_history"
+        verbose_name = "Historique de transaction"
+        verbose_name_plural = "Historique des transactions"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.get_action_display()} - Transaction #{self.transaction_id} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
 

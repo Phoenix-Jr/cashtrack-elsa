@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Transaction
+from rest_framework.exceptions import ValidationError
+from .models import Transaction, TransactionHistory
 from categories.serializers import CategorySerializer
 from accounts.serializers import UserSerializer
 
@@ -89,6 +90,16 @@ class TransactionSerializer(serializers.ModelSerializer):
         category_id = validated_data.pop("category_id", None)
         request = self.context.get("request")
         
+        # Validate that a dépense doesn't exceed current balance
+        if validated_data.get("type") == "depense":
+            current_balance = Transaction.get_current_balance()
+            expense_amount = float(validated_data.get("amount", 0))
+            
+            if expense_amount > current_balance:
+                raise ValidationError({
+                    "amount": f"Le montant de la dépense ({expense_amount:,.0f} FCFA) dépasse le solde actuel ({current_balance:,.0f} FCFA). Solde insuffisant."
+                })
+        
         if category_id:
             from categories.models import Category
             try:
@@ -105,6 +116,37 @@ class TransactionSerializer(serializers.ModelSerializer):
         category_id = validated_data.pop("category_id", None)
         request = self.context.get("request")
         
+        # Validate that a dépense doesn't exceed current balance
+        # Check if type is being changed to dépense or amount is being increased
+        new_type = validated_data.get("type", instance.type)
+        new_amount = validated_data.get("amount", instance.amount)
+        
+        if new_type == "depense":
+            # Calculate current balance excluding the current transaction being updated
+            from django.db.models import Sum
+            from decimal import Decimal
+            
+            # Get all transactions except the one being updated
+            all_transactions = Transaction.objects.exclude(id=instance.id)
+            total_recettes = all_transactions.filter(type="recette").aggregate(
+                total=Sum("amount")
+            )["total"] or Decimal('0')
+            
+            total_depenses = abs(all_transactions.filter(type="depense").aggregate(
+                total=Sum("amount")
+            )["total"] or Decimal('0'))
+            
+            # Calculate balance without the current transaction
+            balance_without_current = float(total_recettes - total_depenses)
+            
+            # Add the new expense amount
+            new_expense_amount = float(new_amount)
+            
+            if new_expense_amount > balance_without_current:
+                raise ValidationError({
+                    "amount": f"Le montant de la dépense ({new_expense_amount:,.0f} FCFA) dépasse le solde disponible ({balance_without_current:,.0f} FCFA). Solde insuffisant."
+                })
+        
         if category_id is not None:
             if category_id:
                 from categories.models import Category
@@ -119,4 +161,30 @@ class TransactionSerializer(serializers.ModelSerializer):
             validated_data["modified_by"] = request.user
         
         return super().update(instance, validated_data)
+
+
+class TransactionHistorySerializer(serializers.ModelSerializer):
+    """Serializer for TransactionHistory model"""
+    performed_by = serializers.SerializerMethodField()
+    action_display = serializers.CharField(source='get_action_display', read_only=True)
+    
+    class Meta:
+        model = TransactionHistory
+        fields = [
+            "id",
+            "transaction_id",
+            "action",
+            "action_display",
+            "transaction_data",
+            "performed_by",
+            "created_at",
+            "changes",
+        ]
+        read_only_fields = ["id", "created_at"]
+    
+    def get_performed_by(self, obj):
+        """Return user info or None if null"""
+        if obj.performed_by is None:
+            return None
+        return UserSerializer(obj.performed_by).data
 

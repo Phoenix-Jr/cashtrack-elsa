@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useCategories } from "@/hooks/useCategory"
+import { useDashboardStats } from "@/hooks/useTransaction"
 import type { Transaction } from "@/types"
 
 interface TransactionModalProps {
@@ -18,6 +19,8 @@ interface TransactionModalProps {
 
 export function TransactionModal({ isOpen, onClose, onSubmit, transaction }: TransactionModalProps) {
   const { data: categories = [] } = useCategories()
+  const { data: dashboardStats } = useDashboardStats()
+  const currentBalance = dashboardStats?.current_balance || 0
 
   const [formData, setFormData] = useState({
     type: "recette" as "recette" | "depense",
@@ -86,6 +89,14 @@ export function TransactionModal({ isOpen, onClose, onSubmit, transaction }: Tra
       newErrors.amount = "Le montant doit être supérieur à 0"
     }
 
+    // Validate that dépense doesn't exceed current balance
+    if (formData.type === "depense" && formData.amount) {
+      const expenseAmount = Number.parseFloat(formData.amount)
+      if (expenseAmount > currentBalance) {
+        newErrors.amount = `Le montant de la dépense (${expenseAmount.toLocaleString("fr-FR")} FCFA) dépasse le solde actuel (${currentBalance.toLocaleString("fr-FR")} FCFA). Solde insuffisant.`
+      }
+    }
+
     // Référence n'est plus obligatoire, mais si elle est remplie, elle doit avoir au moins 3 caractères
     if (formData.ref && formData.ref.trim() !== "" && formData.ref.trim().length < 3) {
       newErrors.ref = "La référence doit contenir au moins 3 caractères"
@@ -118,8 +129,23 @@ export function TransactionModal({ isOpen, onClose, onSubmit, transaction }: Tra
         category: formData.category,
       })
       onClose()
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erreur lors de la soumission:", error)
+      // Handle validation errors from backend
+      if (error?.response?.data) {
+        const backendErrors = error.response.data
+        const newErrors: Record<string, string> = {}
+        
+        if (backendErrors.amount) {
+          newErrors.amount = Array.isArray(backendErrors.amount) 
+            ? backendErrors.amount[0] 
+            : backendErrors.amount
+        }
+        
+        if (Object.keys(newErrors).length > 0) {
+          setErrors(newErrors)
+        }
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -269,6 +295,11 @@ export function TransactionModal({ isOpen, onClose, onSubmit, transaction }: Tra
             <Label htmlFor="amount" className="text-neutral-700">
               Montant (XOF) <span className="text-red-500">*</span>
             </Label>
+            {formData.type === "depense" && (
+              <div className="text-xs text-neutral-500 mb-1">
+                Solde actuel: <span className="font-medium text-neutral-700">{currentBalance.toLocaleString("fr-FR")} FCFA</span>
+              </div>
+            )}
             <div className="relative">
               <Input
                 id="amount"

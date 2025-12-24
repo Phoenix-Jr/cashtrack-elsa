@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Store,
   Lock,
+  History,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useCurrentUser } from "@/hooks/useAuth"
@@ -35,6 +36,7 @@ const navigationItems = [
   { id: "categories", label: "Catégories", icon: FolderOpen, href: "/dashboard/categories", requiresAdmin: false },
   { id: "users", label: "Utilisateurs", icon: Users, href: "/dashboard/users", requiresAdmin: true },
   { id: "analytics", label: "Statistiques", icon: BarChart3, href: "/dashboard/analytics", requiresAdmin: false },
+  { id: "history", label: "Historique", icon: History, href: "/dashboard/history", requiresAdmin: false },
   { id: "settings", label: "Paramètres", icon: Settings, href: "/dashboard/settings", requiresAdmin: false },
 ]
 
